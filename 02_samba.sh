@@ -30,5 +30,6 @@ echo "This script was made for Debian 9"
 upgradeSystem
 installSamba
 setupSamba
+installDnsBackend
 exit 0
 
