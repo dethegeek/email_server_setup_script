@@ -26,7 +26,7 @@ function error_check {
 
 
 echo "You are about to install and configure Postfix virtual system with imap support (via Dovecot)."
-echo "This script was made for Debian 7, but will probably also work for other distributions after minor changes."
+echo "This script was made for Debian 7, but was adapted for Debian 9 [25/07/2017]."
 
 echo "Updating system"
 apt-get update
@@ -41,53 +41,74 @@ useradd -u 5000 -g vmail -s /usr/bin/nologin -d /home/vmail -m vmail
 error_check
 
 echo "Installing programs:"
-apt-get install postfix dovecot-core dovecot-imapd postgresql postfix-pgsql dovecot-lmtpd dovecot-pgsql php5-fpm php5-imap php5-pgsql php5-mcrypt php5-intl
+apt-get install postfix dovecot-core dovecot-imapd postgresql postfix-pgsql dovecot-lmtpd dovecot-pgsql php7.0-fpm php7.0-imap php7.0-pgsql php7.0-mcrypt php7.0-intl php7.0-mbstring php7.0-xml
 error_check
 
-echo "Preparing database:"
+#echo "Preparing database:"
 
 DBPASS=$(date | md5sum | head -c 32)
-CREATEUSER="CREATE USER postfix_user WITH PASSWORD '${DBPASS}';"
-CREATEDB="CREATE DATABASE postfix_db;"
-PERMISSDB="GRANT ALL PRIVILEGES ON DATABASE postfix_db TO postfix_user;"
+#CREATEUSER="CREATE USER postfix_user WITH PASSWORD '${DBPASS}';"
+#CREATEDB="CREATE DATABASE postfix_db;"
+#PERMISSDB="GRANT ALL PRIVILEGES ON DATABASE postfix_db TO postfix_user;"
 
-sudo -u postgres psql -c "${CREATEUSER}"
-error_check
-sudo -u postgres psql -c "${CREATEDB}"
-error_check
-sudo -u postgres psql -c "${PERMISSDB}"
-error_check
+#sudo -u postgres psql -c "${CREATEUSER}"
+#error_check
+#sudo -u postgres psql -c "${CREATEDB}"
+#error_check
+#sudo -u postgres psql -c "${PERMISSDB}"
+#error_check
+
+echo
+echo "Please inform the main domain of your server, like 'example.com'"
+
+read MAIN_DOMAIN
+
+echo
+echo "Please inform the Hostname of your machine like 'hostname.example.com'"
+echo "It'll be needed to add an A entry for the hostname on the DNS zone"
+echo
+
+read HOST_NAME
 
 echo "Creating postfix config files (/etc/postfix/main.cf):"
-echo "relay_domains =
+echo "myhostname = ${HOST_NAME}
+mydomain = ${MAIN_DOMAIN}
+mydestination = \$myhostname, localhost.\$mydomain, localhost
+relay_domains =
 virtual_alias_maps = proxy:pgsql:/etc/postfix/virtual_alias_maps.cf
 virtual_mailbox_domains = proxy:pgsql:/etc/postfix/virtual_mailbox_domains.cf
 virtual_mailbox_maps = proxy:pgsql:/etc/postfix/virtual_mailbox_maps.cf
 virtual_mailbox_base = /home/vmail
 virtual_mailbox_limit = 512000000
 virtual_minimum_uid = 5000
-virtual_transport = virtual
+virtual_transport = dovecot
 virtual_uid_maps = static:5000
 virtual_gid_maps = static:5000
-local_transport = virtual
-local_recipient_maps = $virtual_mailbox_maps
+local_transport = dovecot
+local_recipient_maps = \$virtual_mailbox_maps
 transport_maps = hash:/etc/postfix/transport
 
+milter_default_action = accept
+milter_protocol = 2
+smtpd_milters = inet:localhost:8891
+non_smtpd_milters = inet:localhost:8891 
+
+smtp_tls_security_level = may
 smtpd_sasl_auth_enable = yes
 smtpd_sasl_type = dovecot
 smtpd_sasl_path = private/auth
 smtpd_recipient_restrictions = permit_mynetworks, permit_sasl_authenticated, reject_unauth_destination
 smtpd_sasl_security_options = noanonymous
-smtpd_sasl_tls_security_options = $smtpd_sasl_security_options
+smtpd_sasl_tls_security_options = \$smtpd_sasl_security_options
 smtpd_tls_auth_only = yes
 smtpd_tls_cert_file = /etc/ssl/private/server.crt
 smtpd_tls_key_file = /etc/ssl/private/server.key
-smtpd_sasl_local_domain = $mydomain
+smtpd_sasl_local_domain = \$mydomain
 broken_sasl_auth_clients = yes
 smtpd_tls_loglevel = 1
 html_directory = /usr/share/doc/postfix/html
-queue_directory = /var/spool/postfix
-mydestination = localhost" > /etc/postfix/main.cf
+queue_directory = /var/spool/postfix" > /etc/postfix/main.cf
+message_size_limit = 52428800
 error_check
 
 echo "Creating postfix config files (/etc/postfix/master.cf):"
@@ -102,6 +123,7 @@ echo "#
 #               (yes)   (yes)   (yes)   (never) (100)
 # ==========================================================================
 smtp      inet  n       -       -       -       -       smtpd
+  -o smtpd_milters=inet:127.0.0.1:8891
 #smtp      inet  n       -       -       -       1       postscreen
 #smtpd     pass  -       -       -       -       -       smtpd
 #dnsblog   unix  -       -       -       -       0       dnsblog
@@ -150,15 +172,20 @@ scache    unix  -       -       -       -       1       scache
 # pages of the non-Postfix software to find out what options it wants.
 #
 # Many of the following services use the Postfix pipe(8) delivery
-# agent.  See the pipe(8) man page for information about ${recipient}
+# agent.  See the pipe(8) man page for information about \${recipient}
 # and other message envelope options.
 # ====================================================================
 #
 # maildrop. See the Postfix MAILDROP_README file for details.
 # Also specify in main.cf: maildrop_destination_recipient_limit=1
 #
-maildrop  unix  -       n       n       -       -       pipe
-  flags=DRhu user=vmail argv=/usr/bin/maildrop -d ${recipient}
+# To 'virtual' LDA:
+#maildrop  unix  -       n       n       -       -       pipe
+#  flags=DRhu user=vmail argv=/usr/bin/maildrop -d \${recipient}
+#
+# To Dovecot LDA:
+dovecot   unix  -       n       n       -       -       pipe                                                                    
+   flags=DRhu user=vmail:vmail argv=/usr/lib/dovecot/dovecot-lda -f \${sender} -d \${recipient}
 #
 # ====================================================================
 #
@@ -177,32 +204,32 @@ maildrop  unix  -       n       n       -       -       pipe
 # Also specify in main.cf: cyrus_destination_recipient_limit=1
 #
 #cyrus     unix  -       n       n       -       -       pipe
-#  user=cyrus argv=/cyrus/bin/deliver -e -r ${sender} -m ${extension} ${user}
+#  user=cyrus argv=/cyrus/bin/deliver -e -r ${sender} -m \${extension} \${user}
 #
 # ====================================================================
 # Old example of delivery via Cyrus.
 #
 #old-cyrus unix  -       n       n       -       -       pipe
-#  flags=R user=cyrus argv=/cyrus/bin/deliver -e -m ${extension} ${user}
+#  flags=R user=cyrus argv=/cyrus/bin/deliver -e -m \${extension} \${user}
 #
 # ====================================================================
 #
 # See the Postfix UUCP_README file for configuration details.
 #
 uucp      unix  -       n       n       -       -       pipe
-  flags=Fqhu user=uucp argv=uux -r -n -z -a$sender - $nexthop!rmail ($recipient)
+  flags=Fqhu user=uucp argv=uux -r -n -z -a\$sender - \$nexthop!rmail (\$recipient)
 #
 # Other external delivery methods.
 #
 ifmail    unix  -       n       n       -       -       pipe
-  flags=F user=ftn argv=/usr/lib/ifmail/ifmail -r $nexthop ($recipient)
+  flags=F user=ftn argv=/usr/lib/ifmail/ifmail -r \$nexthop (\$recipient)
 bsmtp     unix  -       n       n       -       -       pipe
-  flags=Fq. user=bsmtp argv=/usr/lib/bsmtp/bsmtp -t$nexthop -f$sender $recipient
+  flags=Fq. user=bsmtp argv=/usr/lib/bsmtp/bsmtp -t\$nexthop -f\$sender \$recipient
 scalemail-backend unix  -   n   n   -   2   pipe
-  flags=R user=scalemail argv=/usr/lib/scalemail/bin/scalemail-store ${nexthop} ${user} ${extension}
+  flags=R user=scalemail argv=/usr/lib/scalemail/bin/scalemail-store \${nexthop} \${user} \${extension}
 mailman   unix  -       n       n       -       -       pipe
   flags=FR user=list argv=/usr/lib/mailman/bin/postfix-to-mailman.py
-  ${nexthop} ${user}
+  \${nexthop} \${user}
 
 cleanup   unix  n       -       -       -       0       cleanup
 subcleanup unix n       -       -       -       0       cleanup
@@ -282,6 +309,11 @@ postmap /etc/postfix/transport
 error_check
 
 read -p "Enter Postfix Admin and Roundcube installation path: " DOWNPATH
+
+if [ ! -d ${DOWNPATH} ]; then
+    mkdir -p ${DOWNPATH}
+fi
+
 echo "Checking if path is correct:"
 cd ${DOWNPATH}
 error_check
@@ -295,23 +327,31 @@ tar xvf postfixadmin.tar.gz -C ${DOWNPATH}
 error_check
 rm -rf postfixadmin.tar.gz
 mv postfixadmin-* postfixadmin
+mkdir postfixadmin/templates_c
+chown debian: postfixadmin/templates_c
 
 echo "Setting permissions:"
 chmod -R 777 postfixadmin/templates_c
 error_check
 
 echo "Downloading roundcube:"
-wget -O roundcube.tar.gz http://sourceforge.net/projects/roundcubemail/files/latest/download
+wget https://github.com/roundcube/roundcubemail/releases/download/1.3.0/roundcubemail-1.3.0-complete.tar.gz
 error_check
 
 echo "Unpacking roundcube:"
-tar xvf roundcube.tar.gz -C ${DOWNPATH}
+tar xvf roundcubemail-1.3.0-complete.tar.gz -C ${DOWNPATH}
 error_check
+
 rm -rf roundcube.tar.gz
 mv roundcubemail-* mail
 
-echo "Checking if php5-fpm is working:"
-service php5-fpm restart
+chown -R www-data: mail/*
+chown www-data mail/.htaccess
+error_check
+
+
+echo "Checking if php7.0-fpm is working:"
+service php7.0-fpm restart
 error_check
 
 echo "Creating SSL certificate:"
@@ -338,11 +378,28 @@ update-rc.d postfix defaults
 update-rc.d dovecot defaults
 error_check
 
+
 echo -e "$COL_GREEN Setup complete. $COL_RESET"
-echo "Now you should configure postfixadmin and roundcube."
+echo
+echo "You should configure postfixadmin and roundcube."
 echo "Use these settings:"
 echo "database type: pgsql"
 echo "database host: localhost"
 echo "database user: postfix_user"
 echo "database pass: ${DBPASS}"
 echo "database name: postfix_db"
+echo
+echo "You must create the following database and user:"
+echo
+echo "USER: postfix_user"
+echo "PASS: ${DBPASS}"
+echo "DATABASE: postfix_db"
+echo
+echo "while in the postgres shell, you can create those with:"
+echo "postgres# createuser -P postfix_user"
+echo
+echo "Past the password when it prompts"
+echo
+echo "postgres# createdb postfix_db -O postfix_user"
+echo
+
