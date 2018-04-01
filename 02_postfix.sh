@@ -1,36 +1,35 @@
 #!/bin/bash
 
-ESC_SEQ="\x1b["
-COL_RESET=$ESC_SEQ"39;49;00m"
-COL_RED=$ESC_SEQ"31;01m"
-COL_GREEN=$ESC_SEQ"32;01m"
-COL_YELLOW=$ESC_SEQ"33;01m"
+. ./common/common.sh
+. ./common/tools.sh
 
 if [ "$UID" -ne 0 ]
   then echo "Please run as root"
   exit
 fi
 
-function error_check {
-    if [ "$?" = "0" ]; then
-        echo -e "$COL_GREEN OK. $COL_RESET"
-    else
-        echo -e "$COL_RED An error has occured. $COL_RESET"
-        read -p "Press enter or space to ignore it. Press any other key to abort." -n 1 key
+#
+# load configuration
+#
 
-        if [[ $key != "" ]]; then
-            exit
-        fi
+. ./config/postfix.stock.sh
+if [ -f ./config/postfix.sh ]
+then
+    if [ -x ./config/postfix.sh ]
+    then
+        . ./config/postfix.sh
     fi
-}
+fi
+detectDistro
 
+. ./common/$DISTRO/postfix.sh
 
 echo "You are about to install and configure Postfix virtual system with imap support (via Dovecot)."
 echo "This script was made for Debian 7, but was adapted for Debian 9 [25/07/2017]."
 
-echo "Updating system"
-apt-get update
-apt-get upgrade
+upgradeSystem
+installPostfix
+exit 0
 
 echo "Adding group:"
 groupadd -g 5000 vmail
@@ -91,7 +90,7 @@ transport_maps = hash:/etc/postfix/transport
 milter_default_action = accept
 milter_protocol = 2
 smtpd_milters = inet:localhost:8891
-non_smtpd_milters = inet:localhost:8891 
+non_smtpd_milters = inet:localhost:8891
 
 smtp_tls_security_level = may
 smtpd_sasl_auth_enable = yes
@@ -184,7 +183,7 @@ scache    unix  -       -       -       -       1       scache
 #  flags=DRhu user=vmail argv=/usr/bin/maildrop -d \${recipient}
 #
 # To Dovecot LDA:
-dovecot   unix  -       n       n       -       -       pipe                                                                    
+dovecot   unix  -       n       n       -       -       pipe
    flags=DRhu user=vmail:vmail argv=/usr/lib/dovecot/dovecot-lda -f \${sender} -d \${recipient}
 #
 # ====================================================================
