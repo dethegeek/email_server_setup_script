@@ -2,6 +2,10 @@
 
 Following script may be used for configuring complete and secure email server on fresh install of Debian 9. It will probably work on other distributions using apt-get. After minor changes you'll be able to use it on other Linux distros.
 
+This installer is created by solusipse: https://gist.github.com/solusipse/7ed8e1da104baaee3f05
+with enhancements from the following forks:
+- https://gist.github.com/MarcelFox/6f4e68af1d4ca3c92a423d57a3bc4d42
+
 ## What it does? ##
 ### 02_postfix.sh: ###
 - Install Postfix and configure it with TLS support.
@@ -22,7 +26,7 @@ This script is optional. It's intended to use only for nginx (I did not review t
 - It does not configure automatically postfixadmin, neither virtualhosts on apache.
 - It does not configure automatically roundcube, neither virtualhosts on apache.
 - It does not set anything related to DNS, those must be set manually (but it warns about).
-- It does not configure Apache in no way whatsoever. 
+- It does not configure Apache in no way whatsoever.
 - It does not mess or set anything related with DNS server configuration.
 
 
