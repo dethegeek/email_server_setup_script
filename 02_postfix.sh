@@ -22,7 +22,7 @@ then
 fi
 detectDistro
 
-. ./common/$DISTRO/postfix.sh
+. ./common/$DISTRO/postfix/postfix.sh
 
 echo "You are about to install and configure Postfix virtual system with imap support (via Dovecot)."
 echo "This script was made for Debian 7, but was adapted for Debian 9 [25/07/2017]."

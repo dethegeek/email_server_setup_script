@@ -22,7 +22,7 @@ then
 fi
 detectDistro
 
-. ./common/$DISTRO/samba.sh
+. ./common/$DISTRO/samba/samba.sh
 
 echo "You are about to install and configure Samba 4 as domain controller with ISC Bind as DNS backend"
 echo "This script was made for Debian 9"
