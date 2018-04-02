@@ -25,16 +25,16 @@ samba_setup()
 
 samba_installDnsBackend()
 {
-    echo "Configuring ISC Bind"
     bind_install dlz-ldap-enum
-    if [ "$BIND_RESOLUTION_MODE" = "resolve" ]
-    then
+    if [ "$BIND_RESOLUTION_MODE" = "resolve" ]; then
         echo "Using recursive resolution mode"
         bind_setupResolver
-    fi
-    if [ "$BIND_RESOLUTION_MODE" = "forward" ]
-    then
+    elif [ "$BIND_RESOLUTION_MODE" = "forward" ]; then
         echo "Using a forwarder"
         bind_setupForwarder "$BIND_FORWARDER"
+    else
+        echo "Invalid setting resolution mode $BIND_RESOLUTION_MODE"
     fi
+    echo 'include "/var/lib/samba/private/named.conf";' >> /etc/bind/named.conf
+
 }

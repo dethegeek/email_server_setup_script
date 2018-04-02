@@ -18,9 +18,9 @@ bind_getMinorVersion()
     echo $minor
 }
 
-
 bind_setupResolver()
 {
+    echo "Configuring recursive resolution"
     apt-get install -y wget cron
     (crontab -l -u root 2>/dev/null; echo "0 5 1 * * wget -q -O /etc/bind/db.root http://www.internic.net/zones/named.root") | crontab -u root -
     wget -q -O /etc/bind/db.root http://www.internic.net/zones/named.root
@@ -38,7 +38,7 @@ bind_setupForwarder()
     echo "Adding forwarders to ISC Bind"
     export FORWARDERS=$1
     local patch=$(mktemp /tmp/patch.XXXXXXXXXXXX)
-    envsubst '${forwarders}' < common/debian/bind/forwarders.patch > $patch
+    envsubst '${FORWARDERS}' < common/debian/bind/forwarders.patch > $patch
     patch --directory=/etc/bind -p1 < $patch
     export FORWARDERS=
 }

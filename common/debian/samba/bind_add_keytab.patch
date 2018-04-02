@@ -1,0 +1,11 @@
+diff --git a/named.conf.options b/named.conf.options
+index b1bef51..11c40bb 100644
+--- a/named.conf.options
++++ b/named.conf.options
+@@ -22,5 +22,6 @@ options {
+ 
+ 	auth-nxdomain no;    # conform to RFC1035
+ 	listen-on-v6 { any; };
++	tkey-gssapi-keytab "/var/lib/samba/private/dns.keytab";
+ };
+ 
