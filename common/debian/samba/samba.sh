@@ -3,6 +3,7 @@
 samba_install()
 {
     echo "Installing Samba"
+    bind_install
     apt-get install -y samba
     error_check
 }
