@@ -38,5 +38,5 @@ samba_installDnsBackend()
     fi
     local patch=$(mktemp /tmp/patch.XXXXXXXXXXXX)
     SAMBA_VAR="$SAMBA_VAR" envsubst < common/debian/samba/bind_add_keytab.patch > $patch
-    patch --directory=/etc/samba -p1 < $patch
+    patch --directory=/etc/bind -p1 < $patch
 }
