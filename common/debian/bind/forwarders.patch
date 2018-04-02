@@ -1,0 +1,16 @@
+diff --git a/named.conf.options b/named.conf.options
+--- a/named.conf.options
++++ b/named.conf.options
+@@ -10,9 +10,9 @@ options {
+        // Uncomment the following block, and insert the addresses replacing
+        // the all-0's placeholder.
+
+-       // forwarders {
+-       //      0.0.0.0;
+-       // };
++       forwarders {
++               ${FORWARDERS};
++       };
+
+        //========================================================================
+        // If BIND logs error messages about the root key being expired,

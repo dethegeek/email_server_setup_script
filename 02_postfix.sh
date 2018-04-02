@@ -1,12 +1,6 @@
 #!/bin/bash
 
-. ./common/common.sh
 . ./common/tools.sh
-
-if [ "$UID" -ne 0 ]
-  then echo "Please run as root"
-  exit
-fi
 
 #
 # load configuration
@@ -28,7 +22,7 @@ echo "You are about to install and configure Postfix virtual system with imap su
 echo "This script was made for Debian 7, but was adapted for Debian 9 [25/07/2017]."
 
 upgradeSystem
-installPostfix
+postfix_install
 exit 0
 
 echo "Adding group:"

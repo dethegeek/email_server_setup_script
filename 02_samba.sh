@@ -1,12 +1,6 @@
 #!/bin/bash
 
-. ./common/common.sh
 . ./common/tools.sh
-
-if [ "$UID" -ne 0 ]
-  then echo "Please run as root"
-  exit
-fi
 
 #
 # load configuration
@@ -21,15 +15,17 @@ then
     fi
 fi
 detectDistro
+echo 0
 
 . ./common/$DISTRO/samba/samba.sh
+. ./common/$DISTRO/bind/bind.sh
 
 echo "You are about to install and configure Samba 4 as domain controller with ISC Bind as DNS backend"
 echo "This script was made for Debian 9"
 
 upgradeSystem
-installSamba
-setupSamba
-installDnsBackend
+samba_install
+samba_setup $UPPER_SAMBA_DOMAIN $SAMBA_NETBIOS_DOMAIN
+samba_installDnsBackend
 exit 0
 

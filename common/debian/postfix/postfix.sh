@@ -1,16 +1,16 @@
-#Â!/bin/bash
+#ï¿½!/bin/bash
 
 # This installer is partially based on a gist from solusipse: https://gist.github.com/solusipse/7ed8e1da104baaee3f05
 # with enhancements from the following forks:
 # - https://gist.github.com/MarcelFox/6f4e68af1d4ca3c92a423d57a3bc4d42
 
-installPostfix()
+postfix_install()
 {
     echo "Installing Postfix"
     apt-get install -y postfix postfix-ldap
 }
 
-postfixLdap()
+postfix_setupLdapBackend()
 {
     touch /etc/postfix/ldap-users.cf
     chgrp postfix /etc/postfix/ldap-users.cf
@@ -45,7 +45,7 @@ query_filter = (&(&(objectCategory=person)(sAMAccountName=%u))(!(userAccountCont
 # result_attribute = maildrop
 #result_attribute = sAMAccountName
 result_attribute = mail
-# the trailing slash is required 
+# the trailing slash is required
 result_format = $MAIL_DOMAIN/%u/Maildir/
 EOT
 }
