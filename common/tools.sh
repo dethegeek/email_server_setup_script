@@ -163,7 +163,7 @@ checkDependencies()
         echo "I need patch"
         dependenciesOk=0
     fi
-    if [ "$dependenciesOk" != "1"]; then
+    if [ "$dependenciesOk" != "1" ]; then
         return 1
     fi
 }
