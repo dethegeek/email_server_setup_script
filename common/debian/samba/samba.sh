@@ -37,5 +37,6 @@ samba_installDnsBackend()
         echo "Invalid setting resolution mode $BIND_RESOLUTION_MODE"
     fi
     local patch=$(mktemp /tmp/patch.XXXXXXXXXXXX)
-    SAMBA_VAR="$SAMBA_VAR" envsubst < common/debian/bind/enable_forwarders.patch > $patch
+    SAMBA_VAR="$SAMBA_VAR" envsubst < common/debian/samba/bind_add_keytab.patch > $patch
+    patch --directory=/etc/samba -p1 < $patch
 }
