@@ -35,6 +35,6 @@ samba_installDnsBackend()
     else
         echo "Invalid setting resolution mode $BIND_RESOLUTION_MODE"
     fi
-    echo 'include "/var/lib/samba/private/named.conf";' >> /etc/bind/named.conf
-
+    local patch=$(mktemp /tmp/patch.XXXXXXXXXXXX)
+    SAMBA_VAR="$SAMBA_VAR" envsubst < common/debian/bind/enable_forwarders.patch > $patch
 }

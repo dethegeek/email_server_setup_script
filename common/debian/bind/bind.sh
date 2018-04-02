@@ -38,7 +38,7 @@ bind_setupForwarder()
     echo "Adding forwarders to ISC Bind"
     export FORWARDERS=$1
     local patch=$(mktemp /tmp/patch.XXXXXXXXXXXX)
-    envsubst '${FORWARDERS}' < common/debian/bind/forwarders.patch > $patch
+    FORWARDERS="$1" envsubst '${FORWARDERS}' < common/debian/bind/enable_forwarders.patch > $patch
     patch --directory=/etc/bind -p1 < $patch
     export FORWARDERS=
 }
